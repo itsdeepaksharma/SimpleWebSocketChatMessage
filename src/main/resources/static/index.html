@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Chat</title>
+</head>
+<body>
+
+<h2>Simple Chat App</h2>
+
+<input type="text" id="sender" placeholder="Your name" />
+<br><br>
+
+<input type="text" id="message" placeholder="Your message" />
+<button onclick="sendMessage()">Send</button>
+
+<ul id="chat"></ul>
+
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
+
+<script>
+
+    let stompClient = null;
+
+    // Step 1: Connect to WebSocket
+    function connect() {
+        const socket = new SockJS('/chat');
+        stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, function (frame) {
+            console.log('Connected: ' + frame);
+
+            // Step 2: Subscribe to topic
+            stompClient.subscribe('/topic/messages', function (message) {
+                showMessage(JSON.parse(message.body));
+            });
+        });
+    }
+
+    // Step 3: Send message
+    function sendMessage() {
+        const sender = document.getElementById('sender').value;
+        const content = document.getElementById('message').value;
+
+        const chatMessage = {
+            sender: sender,
+            content: content
+        };
+
+        stompClient.send("/app/send", {}, JSON.stringify(chatMessage));
+    }
+
+    // Step 4: Display message
+    function showMessage(message) {
+        const chat = document.getElementById('chat');
+        const li = document.createElement('li');
+        li.appendChild(document.createTextNode(message.sender + ": " + message.content));
+        chat.appendChild(li);
+    }
+
+    // Auto connect on page load
+    connect();
+
+</script>
+
+</body>
+</html>
